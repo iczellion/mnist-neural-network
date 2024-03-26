@@ -12,16 +12,36 @@
     utils,
   }:
     utils.lib.eachDefaultSystem (system: let
-      pkgs = import nixpkgs {
-        inherit system;
-      };
+      pkgs = import nixpkgs { inherit system; };
+      python = pkgs.python311;
+      pythonPackages = python.pkgs;
     in {
       devShell = pkgs.mkShell {
+        name = "ai-courses";
+        nativeBuildInputs = [ pkgs.bashInteractive ];
+
         # Add anything in here if you want it to run when we run `nix develop`.
-        buildInputs = with pkgs; [
+        buildInputs = with pythonPackages; [
           # Additional dev packages list here.
-          python3
+          setuptools
+          wheel
+          venvShellHook
+          ipython
+          jupyter
+          jupyterlab
+          numpy
         ];
+        venvDir = ".venv";
+        src = null;
+        postVenv = ''
+            unset SOURCE_DATE_EPOCH
+        '';
+        postShellHook = ''
+            unset SOURCE_DATE_EPOCH
+            unset LD_PRELOAD
+
+            PYTHONPATH=$PWD/$venvDir/${python.sitePackages}:$PYTHONPATH
+        '';
       };
     });
 }
