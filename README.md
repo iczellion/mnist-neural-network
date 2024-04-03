@@ -15,4 +15,10 @@ pip install -r requirements.txt
 ```
 # Start jupyter
 jupyter lab
+
+# Run application
+python src/nn.py
+
+# Run tests
+pytest -s
 ```
