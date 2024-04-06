@@ -35,6 +35,14 @@ class ActivationRelu:
     def backward(self, dvalues):
         return dvalues > 0
 
+class ActivationSoftmax:
+
+    def __init__(self) -> None:
+        self.cache = {}
+    
+    def forward(self, inputs):
+        self.cache = inputs
+        return np.exp(inputs) / sum(np.exp(inputs))
 
 class CrossentropyLoss:
 
@@ -75,7 +83,7 @@ if __name__ == "__main__":
     layer_1 = LinearLayer(3, 4)
     act_1 = ActivationRelu()
     layer_2 = LinearLayer(4, 1)
-    act_2 = ActivationRelu()
+    act_2 = ActivationSoftmax()
 
     # Do a forward pass
     out1 = layer_1.forward(x)
@@ -89,5 +97,5 @@ if __name__ == "__main__":
 
     #print(out_act1)
     
-    der = act_2.backward(out2)
-    print(der)
+    #der = act_2.backward(out2)
+    print(x.shape)
