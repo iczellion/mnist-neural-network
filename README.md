@@ -7,6 +7,9 @@ Code repository for AI courses
 ```shell
 # On first time cloning, install dependencies
 pip install -r requirements.txt
+
+# Extract the MNIST tar archive dataset to ./tmp
+mkdir -p ./.tmp && tar -xf ./dataset/mnist.tar.gz -C ./.tmp --strip-components=1
 ```
 
 
