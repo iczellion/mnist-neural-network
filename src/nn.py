@@ -30,10 +30,10 @@ class ActivationRelu:
 
     def forward(self, inputs):
         self.cache = inputs
-        return np.maximum(0., inputs)
+        return np.maximum(inputs, 0)
     
     def backward(self, dvalues):
-        return np.greater(dvalues, 0.).astype(np.float32)
+        return dvalues > 0
 
 
 class CrossentropyLoss:
@@ -67,11 +67,10 @@ if __name__ == "__main__":
             [610, 987, 1597],
             [2584, 4181, 6765],
             [10946, 17711, 28657],
-            [46368, 75025, 121393],
-            [196418, 317811, 514229]
+            [46368, 75025, 121393]
         ]
     ).T
-    y = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).T
+    y = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9]).T
 
     layer_1 = LinearLayer(3, 4)
     act_1 = ActivationRelu()
@@ -90,5 +89,5 @@ if __name__ == "__main__":
 
     #print(out_act1)
     
-    der = act_2.backward(out_act2)
-    print(out_act2)
+    der = act_2.backward(out2)
+    print(der)
