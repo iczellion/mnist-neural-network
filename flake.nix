@@ -30,6 +30,7 @@
           jupyter
           jupyterlab
           numpy
+          tar
         ];
         venvDir = ".venv";
         src = null;
