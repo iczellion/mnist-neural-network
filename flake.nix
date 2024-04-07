@@ -30,6 +30,8 @@
           jupyter
           jupyterlab
           numpy
+          pandas
+          pyarrow
         ];
         venvDir = ".venv";
         src = null;
