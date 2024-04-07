@@ -1,3 +1,4 @@
+import pandas as pd
 import numpy as np
 
 class LinearLayer:
@@ -36,6 +37,11 @@ class ActivationRelu:
         return dvalues > 0
 
 class ActivationSoftmax:
+    """Class to represent a Softmax activation in a neural network.
+
+       The softmax activation function is commonly used in the output layer of a neural network when dealing with multi-class classification problems.
+       It converts raw scores or logits into probabilities.
+    """
 
     def __init__(self) -> None:
         self.cache = {}
@@ -43,6 +49,17 @@ class ActivationSoftmax:
     def forward(self, inputs):
         self.cache = inputs
         return np.exp(inputs) / sum(np.exp(inputs))
+
+class NNValueEncoder:
+
+    def __init__(self) -> None:
+        pass
+
+    def one_hot_encode(self, inputs):
+        one_hot_output = np.zeros((inputs.size, inputs.max() + 1))
+        one_hot_output[np.arange(inputs.size), inputs] = 1
+        one_hot_output = one_hot_output.T
+        return one_hot_output
 
 class CrossentropyLoss:
 
@@ -65,37 +82,35 @@ class CrossentropyLoss:
 
 
 if __name__ == "__main__":
-    x = np.array(
-        [
-            [0, 1, 1],
-            [2, 3, 5],
-            [8, 13, 21],
-            [34, 55, 89],
-            [144, 233, 377],
-            [610, 987, 1597],
-            [2584, 4181, 6765],
-            [10946, 17711, 28657],
-            [46368, 75025, 121393]
-        ]
-    ).T
-    y = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9]).T
 
-    layer_1 = LinearLayer(3, 4)
+    data = pd.read_csv('./.tmp/mnist_test.csv') # load mnist dataset
+
+    data = np.array(data)
+    m, n = data.shape
+    #np.random.shuffle(data)  # shuffle before splitting into dev and training sets
+
+    data_dev = data[0:1000]
+    Y_dev = data_dev[:, 0].T
+    X_dev = data_dev[:,1:].T
+    X_dev = X_dev / 255.
+
+    # Our NN will have a simple two-layer architecture. Input layer a[0] will have 784 units corresponding to the 784 pixels in each 28x28 input image.
+    # A hidden layer a[1] will have 10 units with ReLU activation, and finally our output layer a[2] will have 10 units corresponding to the ten digit classes with softmax activation.
+    layer_1 = LinearLayer(X_dev.shape[0], 10)
     act_1 = ActivationRelu()
-    layer_2 = LinearLayer(4, 1)
+    layer_2 = LinearLayer(10, 10)
     act_2 = ActivationSoftmax()
-
+ 
     # Do a forward pass
-    out1 = layer_1.forward(x)
+    out1 = layer_1.forward(X_dev)
     out_act1 = act_1.forward(out1)
     out2 = layer_2.forward(out_act1)
     out_act2 = act_2.forward(out2)
 
+    # One hot encode Y values
+    enc = NNValueEncoder()
+    one_hot_Y = enc.one_hot_encode(Y_dev)
+
     # Calculate loss
     loss = CrossentropyLoss()
-    dz1 = loss.calculate(y, out_act2)
-
-    #print(out_act1)
-    
-    #der = act_2.backward(out2)
-    print(x.shape)
+    dz1 = loss.calculate(Y_dev, out_act2)
