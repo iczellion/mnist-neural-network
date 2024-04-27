@@ -32,6 +32,7 @@
           numpy
           pandas
           pyarrow
+          tkinter
         ];
         venvDir = ".venv";
         src = null;
