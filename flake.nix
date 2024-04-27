@@ -35,6 +35,10 @@
         ];
         venvDir = ".venv";
         src = null;
+        postVenvCreation = ''
+            unset SOURCE_DATE_EPOCH
+            pip install -r ${./requirements.txt}
+        '';
         postVenv = ''
             unset SOURCE_DATE_EPOCH
         '';
