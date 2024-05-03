@@ -1,5 +1,10 @@
+import sys
+
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use('TkAgg')  # Use TkAgg backend
+import matplotlib.pyplot as plt
 
 class LinearLayer:
     """Class to represent a single Linear layer in a neural network.
@@ -13,10 +18,12 @@ class LinearLayer:
     """
 
     def __init__(self, n_inputs: int, n_outputs: int) -> None:
+        np.random.seed(133)
+
         self.n_inputs = n_inputs
         self.n_outputs = n_outputs
-        self.weights = np.random.randn ( n_outputs, n_inputs ) * 0.01
-        self.bias = np.zeros( (n_outputs, 1) )
+        self.weights = np.random.rand( n_outputs, n_inputs ) - 0.5
+        self.bias = np.random.rand( n_outputs, 1 ) - 0.5
         self.inputs = None
         self.dweights = None
         self.dbias = None
@@ -55,11 +62,13 @@ class ActivationSoftmax:
         self.output = None
     
     def forward(self, inputs):
+        self.inputs = inputs
         exp_values = np.exp(inputs - np.max(inputs, axis=0, keepdims=True))
         probabilities = exp_values / np.sum(exp_values, axis=0, keepdims=True)
         self.output = probabilities
         return probabilities
 
+    """
     def backward(self, dvalues):
         # Initialize gradient array
         dinputs = np.empty_like(dvalues)
@@ -74,6 +83,10 @@ class ActivationSoftmax:
             dinputs[:, index] = np.dot(jacobian_matrix, single_dvalues)
 
         return dinputs
+    """
+    def backward(self, dvalues):
+        print(f"DVALUES: {dvalues}")
+        return dvalues
 
 class NNValueEncoder:
 
@@ -106,51 +119,117 @@ class CrossentropyLoss:
 
     def backward(self, y_true, y_pred):
         samples = len(y_pred)
-        y_pred_clipped = np.clip(y_pred, 1e-15, 1 - 1e-15)
-        gradient = -y_true / y_pred_clipped
-        gradient = gradient / samples
+        gradient = y_pred - y_true
+        gradient = gradient / samples  # Normalize the gradient by the number of samples
         return gradient
+
+class NeuralNetwork:
+
+    def __init__(self, layers, loss_function) -> None:
+        self.layers = layers
+        self.loss_function = loss_function
+
+    def train(self, x_train, y_train, x_test, y_test, epochs, learning_rate):
+
+        # Initialize one hot encoder for Y values
+        enc = NNValueEncoder()
+        y_one_hot_train = enc.one_hot_encode(y_train)
+
+        for epoch in range(epochs):
+            # Forward pass
+            activation = x_train
+            for layer in self.layers:
+                activation = layer.forward(activation)
+            
+            # Loss calculation
+            loss = self.loss_function.calculate(y_one_hot_train, activation)
+
+            # Backward pass
+            gradient = self.loss_function.backward(y_one_hot_train, activation)
+            for layer in reversed(self.layers):
+                gradient = layer.backward(gradient)
+            
+            # Update weights and biases
+            for layer in self.layers:
+                if isinstance(layer, LinearLayer):
+                    layer.weights = layer.weights - learning_rate * layer.dweights
+                    layer.bias = layer.bias - learning_rate * layer.dbias
+
+            if epoch % 10 == 0:
+                pred = self.predict(x_test)
+                accuracy = np.sum(pred == y_test) / y_test.size
+                print(f"Test: {y_test[0, 1:10]} | Pred: {pred[0, 1:10]}")
+                print(f"Epoch {epoch} | loss: {loss}, accuracy: {accuracy*100}%")
+    
+    def predict(self, x):
+        activation = x
+        for layer in self.layers:
+            activation = layer.forward(activation)
+        
+        class_labels = np.argmax(activation, axis=0, keepdims=True)
+        return class_labels
+
+def view_image(image_array):
+    current_image = image_array.reshape((28, 28)) * 255
+
+    plt.gray()
+    plt.imshow(current_image, interpolation='nearest')
+    plt.show()
 
 if __name__ == "__main__":
 
-    data = pd.read_csv('./.tmp/mnist_test.csv') # load mnist dataset
+    # Load mnist training data in a numpy array
+    data_train = pd.read_csv('./.tmp/mnist_train.csv')
+    data_train = np.array(data_train)
+    np.random.shuffle(data_train)
 
-    data = np.array(data)
-    m, n = data.shape
-    #np.random.shuffle(data)  # shuffle before splitting into dev and training sets
+    # Load mnist test data in a numpy array
+    data_test = pd.read_csv('./.tmp/mnist_test.csv') # load mnist dataset
+    data_test = np.array(data_test)
 
-    data_dev = data[0:1000]
-    Y_dev = data_dev[:, 0].T
-    X_dev = data_dev[:,1:].T
-    X_dev = X_dev / 255.
+    # Organize training data
+    y_train = data_train[:, [0]].T
+    x_train = data_train[:,1:].T
+    x_train = x_train / 255.
 
-    # One hot encode Y values
-    enc = NNValueEncoder()
-    one_hot_Y = enc.one_hot_encode(Y_dev)
+    # Organize test data
+    y_test = data_test[:, [0]].T
+    x_test = data_test[:,1:].T
+    x_test = x_test / 255.
+
+    # Initial loss function
+    loss_func = CrossentropyLoss()
 
     # Initialize layers.
     # Our NN will have a simple two-layer architecture, where:
     #   Input layer a[0] will have 784 units corresponding to the 784 pixels in each 28x28 input image.
     #   A hidden layer a[1] will have 10 units with ReLU activation
     #   Output layer a[2] will have 10 units corresponding to the ten digit classes with softmax activation.
-    layer_1 = LinearLayer(X_dev.shape[0], 10)
-    act_1 = ActivationRelu()
-    layer_2 = LinearLayer(10, 10)
-    act_2 = ActivationSoftmax()
- 
-    # Forward pass
-    out1 = layer_1.forward(X_dev)
-    out_act1 = act_1.forward(out1)
-    out2 = layer_2.forward(out_act1)
-    out_act2 = act_2.forward(out2)
+    layers = [
+        LinearLayer(x_train.shape[0], 10),
+        ActivationRelu(),
+        LinearLayer(10, 10),
+        ActivationSoftmax()
+    ]
 
-    # Calculate loss
-    loss = CrossentropyLoss()
-    print("Loss:", loss.calculate(Y_dev, out_act2))
+    # Initialize neural network
+    nn = NeuralNetwork(layers, loss_func)
+    epochs = 400
+    learning_rate = 0.10
 
-    #  Backward pass
-    dloss = loss.backward(one_hot_Y, out_act2)
-    dout2 = act_2.backward(dloss)
-    dout1 = layer_2.backward(dout2)
-    dout_act1 = act_1.backward(dout1)
-    dX = layer_1.backward(dout_act1)
+    print("Starting training process...")
+    nn.train(x_train, y_train, x_test, y_test, epochs, learning_rate)
+
+    #print(y_one_hot_train.shape)
+    np.set_printoptions(threshold=sys.maxsize)
+
+    """
+    print(f"PREDICT: {nn.predict(x_test[:, [7]])}")
+    view_image(x_test[:, 7])
+
+    print(f"PREDICT: {nn.predict(x_test[:, [18]])}")
+    view_image(x_test[:, 18])
+
+    print(f"PREDICT: {nn.predict(x_test[:, [19]])}")
+    view_image(x_test[:, 19])
+    """
