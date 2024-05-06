@@ -74,3 +74,22 @@ class TestLinearLayer:
         weights_only_zeros = not np.any(expected_weights - layer_1.weights)
 
         assert(weights_only_zeros)
+
+class TestActivationSoftmax:
+    def test_forward(self) -> None:
+        # The input vector
+        inputs = np.array([-2, -1, 0]).reshape(-1, 1)  # Reshaping for compatibility with the softmax function
+        
+        # Expected output calculated manually or with another tool for verification
+        # Softmax formula: exp(x_i) / sum(exp(x)) for each element x_i in the input vector
+        expected_output = np.array([0.09003057, 0.24472847, 0.66524096]).reshape(-1, 1)  # Adjusted to match the input shape
+        
+        # Creating an instance of ActivationSoftmax
+        softmax = ActivationSoftmax()
+        
+        # Calling the forward function
+        output = softmax.forward(inputs)
+        
+        # Asserting that the output is close to the expected output
+        # Using np.allclose to compare two arrays for testing purposes
+        assert np.allclose(output, expected_output), "The softmax output did not match the expected values."
