@@ -9,39 +9,25 @@ from nn import *
 
 np.set_printoptions(precision=40)
 
-@pytest.mark.parametrize(
-    "inputs",
-    [
-        np.array([
+# Define a single fixture that returns a dictionary containing inputs, weights, and bias
+@pytest.fixture
+def layer_data():
+    return {
+        'inputs': np.array([
             [1.0, 2.0, 3.0, 2.5],
             [2.0, 5.0, -1.0, 2.0],
             [-1.5, 2.7, 3.3, -0.8]
-        ]).T
-    ]
-)
-
-@pytest.mark.parametrize(
-    "weights",
-    [
-        np.array([
+        ]).T,
+        'weights': np.array([
             [0.2, 0.8, -0.5, 1.0],
             [0.5, -0.91, 0.26, -0.5],
             [-0.26, -0.27, 0.17, 0.87]
-        ])
-    ]
-)
-
-@pytest.mark.parametrize(
-    "bias",
-    [
-        np.array([[2.0, 3.0, 0.5]]).T
-    ]
-)
+        ]),
+        'bias': np.array([[2.0, 3.0, 0.5]]).T
+    }
 
 class TestLinearLayer:
-
-    def test_foward(self, inputs, weights, bias) -> None:
-
+    def test_forward(self, layer_data) -> None:
         expected = np.array([
             [4.8, 8.9, 1.4100000000000004],
             [1.21, -1.8100000000000005, 1.0509999999999997],
@@ -49,17 +35,16 @@ class TestLinearLayer:
         ])
 
         layer_1 = LinearLayer(4, 3)
-        layer_1.weights = weights
-        layer_1.bias = bias
+        layer_1.weights = layer_data['weights']
+        layer_1.bias = layer_data['bias']
 
-        out1 = layer_1.forward(inputs)
+        out1 = layer_1.forward(layer_data['inputs'])
 
         result_only_zeros = not np.any(expected - out1)
 
         assert(result_only_zeros)
-    
-    def test_backward(self, inputs, weights, bias) -> None:
 
+    def test_backward(self, layer_data) -> None:
         expected_weights = np.array([
             [0.179515, 0.742093, -0.510153, 0.971328],
             [0.5003665, -0.9152577000000001, 0.2529017, -0.5021842],
@@ -71,14 +56,14 @@ class TestLinearLayer:
         ])
 
         layer_1 = LinearLayer(4, 3)
-        act_1   = ActivationRelu()
+        act_1 = ActivationRelu()
 
-        layer_1.weights = weights
-        layer_1.bias = bias
+        layer_1.weights = layer_data['weights']
+        layer_1.bias = layer_data['bias']
 
-        out1 = layer_1.forward(inputs)
+        out1 = layer_1.forward(layer_data['inputs'])
 
-        relu  = act_1.forward(out1)
+        relu = act_1.forward(out1)
         drelu = act_1.backward(out1)
 
         dinputs = layer_1.backward(drelu)
