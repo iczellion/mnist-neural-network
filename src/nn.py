@@ -27,7 +27,7 @@ class LinearLayer:
         self.inputs = None
         self.dweights = None
         self.dbias = None
-    
+
     def forward(self, inputs):
         self.inputs = inputs
         z1 = np.dot(self.weights, inputs) + self.bias
@@ -102,15 +102,13 @@ class NNValueEncoder:
 class CrossentropyLoss:
 
     def calculate(self, y_true, y_pred):
-
         """
-        The np.clip() function is used to limit the values in an array to be within a specified range.
-        Clipping values means that any values in the array that fall outside the specified range are set to the nearest value within that range.
-
         In the context of calculating cross-entropy loss using probabilities, it's essential to ensure that the probabilities are within a valid range (i.e., between 0 and 1).
         The reason for this is that the cross-entropy formula involves taking the logarithm of the predicted probabilities. If any predicted probability is exactly 0 or 1,
         taking the logarithm of it would result in negative infinity or undefined values, respectively.
         """
+
+        # The np.clip() function is used to limit the values in an array to be within a specified range.
         y_pred_clipped = np.clip(y_pred, 1e-15, 1 - 1e-15)
 
         cross_entropy_loss = -np.mean(y_true * np.log(y_pred_clipped) + (1 - y_true) * np.log(1 - y_pred_clipped))
