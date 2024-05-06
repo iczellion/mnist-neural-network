@@ -7,6 +7,8 @@ sys.path.insert(0, "src")
 
 from nn import *
 
+np.set_printoptions(precision=40)
+
 @pytest.mark.parametrize(
     "inputs",
     [
@@ -39,6 +41,7 @@ from nn import *
 class TestLinearLayer:
 
     def test_foward(self, inputs, weights, bias) -> None:
+
         expected = np.array([
             [4.8, 8.9, 1.4100000000000004],
             [1.21, -1.8100000000000005, 1.0509999999999997],
@@ -54,3 +57,35 @@ class TestLinearLayer:
         result_only_zeros = not np.any(expected - out1)
 
         assert(result_only_zeros)
+    
+    def test_backward(self, inputs, weights, bias) -> None:
+
+        expected_weights = np.array([
+            [0.179515, 0.742093, -0.510153, 0.971328],
+            [0.5003665, -0.9152577000000001, 0.2529017, -0.5021842],
+            [-0.26274600000000004, -0.27584020000000004, 0.16295920000000003, 0.8636583]
+        ])
+
+        expected_bias = np.array([
+            [1.98489, 2.997739, 0.497389]
+        ])
+
+        layer_1 = LinearLayer(4, 3)
+        act_1   = ActivationRelu()
+
+        layer_1.weights = weights
+        layer_1.bias = bias
+
+        out1 = layer_1.forward(inputs)
+
+        relu  = act_1.forward(out1)
+        drelu = act_1.backward(out1)
+
+        dinputs = layer_1.backward(drelu)
+
+        layer_1.weights += -0.001 * layer_1.dweights
+        layer_1.bias += -0.001 * layer_1.dbias
+
+        weights_only_zeros = not np.any(expected_weights - layer_1.weights)
+
+        assert(weights_only_zeros)
