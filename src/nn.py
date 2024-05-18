@@ -147,6 +147,8 @@ def view_image(image_array):
 
 if __name__ == "__main__":
 
+    np.set_printoptions(threshold=sys.maxsize)
+
     # Load mnist training data in a numpy array
     data_train = pd.read_csv('./.tmp/mnist_train.csv')
     data_train = np.array(data_train)
@@ -187,15 +189,3 @@ if __name__ == "__main__":
 
     print("Starting training process...")
     nn.train(x_train, y_train, x_test, y_test, epochs, learning_rate)
-
-    #print(y_one_hot_train.shape)
-    np.set_printoptions(threshold=sys.maxsize)
-
-    print(f"PREDICT: {nn.predict(x_test[:, [7]])}")
-    view_image(x_test[:, 7])
-
-    print(f"PREDICT: {nn.predict(x_test[:, [18]])}")
-    view_image(x_test[:, 18])
-
-    print(f"PREDICT: {nn.predict(x_test[:, [19]])}")
-    view_image(x_test[:, 19])
