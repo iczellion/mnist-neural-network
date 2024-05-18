@@ -13,9 +13,6 @@ mkdir -p ./.tmp && tar -xf ./dataset/mnist.tar.gz -C ./.tmp --strip-components=1
 # Run application
 
 ```
-# Start jupyter
-jupyter lab
-
 # Run application
 python src/nn.py
 
