@@ -17,7 +17,7 @@
       pythonPackages = python.pkgs;
     in {
       devShell = pkgs.mkShell {
-        name = "ai-courses";
+        name = "mnist-neural-network";
         nativeBuildInputs = [ pkgs.bashInteractive ];
 
         # Add anything in here if you want it to run when we run `nix develop`.
