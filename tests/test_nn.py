@@ -23,7 +23,7 @@ def layer_data():
             [0.5, -0.91, 0.26, -0.5],
             [-0.26, -0.27, 0.17, 0.87]
         ]),
-        'bias': np.array([[2.0, 3.0, 0.5]]).T
+        'bias': np.array([[2.0, 3.0, 0.5]]).T,
     }
 
 class TestLinearLayer:
@@ -87,12 +87,38 @@ class TestActivationSoftmaxLossCrossEntropy:
         expected_loss = 4.222817893333141
         
         # Creating an instance of ActivationSoftmax
-        softmax = ActivationSoftmaxLossCrossEntropy()
+        activation_softmax_crossent = ActivationSoftmaxLossCrossEntropy()
         
         # Calling the forward function
-        output_loss = softmax.forward(inputs_loggits, inputs_ytrue)
-        output_probabilities = softmax.output
+        output_loss = activation_softmax_crossent.forward(inputs_loggits, inputs_ytrue)
+        output_probabilities = activation_softmax_crossent.output
         
         # Asserting that the outputs are close
         assert np.allclose(output_probabilities, expected_output), "The softmax output did not match the expected values."
         assert np.allclose(output_loss, expected_loss), "The cross-entropy loss output did not match the expected loss."
+    
+    def test_backward(self, layer_data) -> None:
+        inputs_loggits = np.array([
+            [4.8, 8.9, 1.4100000000000004],
+            [1.21, -1.8100000000000005, 1.0509999999999997],
+            [2.385, 0.19999999999999996, 0.025999999999999912]
+        ])
+        
+        expected_derivative_loss = np.array([
+            [-3.4905778680912714e-02, 3.3327037641862539e-01, 1.7103238808260224e-01],
+            [ 8.2361022606997902e-03, 7.4387987740856950e-06, -2.1388870024603546e-01],
+            [ 2.6669676420212899e-02, 5.5518115933850518e-05, -2.9047702116990010e-01]
+        ])
+
+        y_true = np.array([
+            [1, 0, 0],
+            [0, 0, 1],
+            [0, 0, 1]
+        ])
+
+        activation_softmax_crossent = ActivationSoftmaxLossCrossEntropy()
+        activation_softmax_crossent.forward(inputs_loggits, y_true)
+
+        output_softmax_gradient = activation_softmax_crossent.backward()
+
+        assert np.allclose(output_softmax_gradient, expected_derivative_loss), "The derivative of the loss did not match the expected values."
