@@ -50,9 +50,9 @@ class ActivationRelu:
     def backward(self, dvalues):
         return dvalues * (self.inputs > 0)
 
-class ActivationSoftmax:
-    """Class to represent a Softmax activation in a neural network.
-
+class ActivationSoftmaxLossCrossEntropy:
+    """Class to combine Softmax activation and Cross-Entropy loss.
+       
        The softmax activation function is commonly used in the output layer of a neural network when dealing with multi-class classification problems.
        It converts raw scores or logits into predicted probabilities of each class for each input.
     """
@@ -60,33 +60,27 @@ class ActivationSoftmax:
     def __init__(self) -> None:
         self.inputs = None
         self.output = None
+        self.y_true = None
     
-    def forward(self, inputs):
+    def forward(self, inputs, y_true):
         self.inputs = inputs
+        self.y_true = y_true
+        
         exp_values = np.exp(inputs - np.max(inputs, axis=0, keepdims=True))
         probabilities = exp_values / np.sum(exp_values, axis=0, keepdims=True)
         self.output = probabilities
-        return probabilities
+        
+        # Loss calculation
+        y_pred_clipped = np.clip(probabilities, 1e-15, 1 - 1e-15)
+        correct_confidences = np.sum(y_true * np.log(y_pred_clipped), axis=0)
+        loss = -np.mean(correct_confidences)
+        
+        return loss
 
-    """
-    def backward(self, dvalues):
-        # Initialize gradient array
-        dinputs = np.empty_like(dvalues)
-
-        # Enumerate outputs and gradients
-        for index, (single_output, single_dvalues) in enumerate(zip(self.output.T, dvalues.T)):
-            # Flatten output array
-            single_output = single_output.reshape(-1, 1)
-            # Calculate Jacobian matrix of the output
-            jacobian_matrix = np.diagflat(single_output) - np.dot(single_output, single_output.T)
-            # Calculate sample-wise gradient
-            dinputs[:, index] = np.dot(jacobian_matrix, single_dvalues)
-
-        return dinputs
-    """
-    def backward(self, dvalues):
-        print(f"DVALUES: {dvalues}")
-        return dvalues
+    def backward(self):
+        samples = self.y_true.shape[1]
+        dinputs = self.output - self.y_true
+        return dinputs / samples
 
 class NNValueEncoder:
 
@@ -98,28 +92,6 @@ class NNValueEncoder:
         one_hot_output[np.arange(inputs.size), inputs] = 1
         one_hot_output = one_hot_output.T
         return one_hot_output
-
-class CrossentropyLoss:
-
-    def calculate(self, y_true, y_pred):
-        """
-        In the context of calculating cross-entropy loss using probabilities, it's essential to ensure that the probabilities are within a valid range (i.e., between 0 and 1).
-        The reason for this is that the cross-entropy formula involves taking the logarithm of the predicted probabilities. If any predicted probability is exactly 0 or 1,
-        taking the logarithm of it would result in negative infinity or undefined values, respectively.
-        """
-
-        # The np.clip() function is used to limit the values in an array to be within a specified range.
-        y_pred_clipped = np.clip(y_pred, 1e-15, 1 - 1e-15)
-
-        cross_entropy_loss = -np.mean(y_true * np.log(y_pred_clipped) + (1 - y_true) * np.log(1 - y_pred_clipped))
-
-        return cross_entropy_loss
-
-    def backward(self, y_true, y_pred):
-        samples = len(y_pred)
-        gradient = y_pred - y_true
-        gradient = gradient / samples  # Normalize the gradient by the number of samples
-        return gradient
 
 class NeuralNetwork:
 
@@ -140,10 +112,10 @@ class NeuralNetwork:
                 activation = layer.forward(activation)
             
             # Loss calculation
-            loss = self.loss_function.calculate(y_one_hot_train, activation)
+            loss = self.loss_function.forward(activation, y_one_hot_train)
+            gradient = self.loss_function.backward()
 
             # Backward pass
-            gradient = self.loss_function.backward(y_one_hot_train, activation)
             for layer in reversed(self.layers):
                 gradient = layer.backward(gradient)
             
@@ -156,8 +128,7 @@ class NeuralNetwork:
             if epoch % 10 == 0:
                 pred = self.predict(x_test)
                 accuracy = np.sum(pred == y_test) / y_test.size
-                print(f"Test: {y_test[0, 1:10]} | Pred: {pred[0, 1:10]}")
-                print(f"Epoch {epoch} | loss: {loss}, accuracy: {accuracy*100}%")
+                print(f"epoch: {epoch:>6} | loss: {loss:<20.8} | accuracy: {accuracy*100:.2f}%")
     
     def predict(self, x):
         activation = x
@@ -196,7 +167,7 @@ if __name__ == "__main__":
     x_test = x_test / 255.
 
     # Initial loss function
-    loss_func = CrossentropyLoss()
+    loss_func = ActivationSoftmaxLossCrossEntropy()
 
     # Initialize layers.
     # Our NN will have a simple two-layer architecture, where:
@@ -206,8 +177,7 @@ if __name__ == "__main__":
     layers = [
         LinearLayer(x_train.shape[0], 10),
         ActivationRelu(),
-        LinearLayer(10, 10),
-        ActivationSoftmax()
+        LinearLayer(10, 10)
     ]
 
     # Initialize neural network
@@ -221,7 +191,6 @@ if __name__ == "__main__":
     #print(y_one_hot_train.shape)
     np.set_printoptions(threshold=sys.maxsize)
 
-    """
     print(f"PREDICT: {nn.predict(x_test[:, [7]])}")
     view_image(x_test[:, 7])
 
@@ -230,4 +199,3 @@ if __name__ == "__main__":
 
     print(f"PREDICT: {nn.predict(x_test[:, [19]])}")
     view_image(x_test[:, 19])
-    """

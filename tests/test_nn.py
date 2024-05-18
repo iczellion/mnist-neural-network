@@ -75,21 +75,24 @@ class TestLinearLayer:
 
         assert(weights_only_zeros)
 
-class TestActivationSoftmax:
+class TestActivationSoftmaxLossCrossEntropy:
     def test_forward(self) -> None:
         # The input vector
-        inputs = np.array([-2, -1, 0]).reshape(-1, 1)  # Reshaping for compatibility with the softmax function
+        inputs_loggits = np.array([-2, -1, 0]).reshape(-1, 1)  # Reshaping for compatibility with the softmax function
+        inputs_ytrue = np.array([1])
         
         # Expected output calculated manually or with another tool for verification
         # Softmax formula: exp(x_i) / sum(exp(x)) for each element x_i in the input vector
         expected_output = np.array([0.09003057, 0.24472847, 0.66524096]).reshape(-1, 1)  # Adjusted to match the input shape
+        expected_loss = 4.222817893333141
         
         # Creating an instance of ActivationSoftmax
-        softmax = ActivationSoftmax()
+        softmax = ActivationSoftmaxLossCrossEntropy()
         
         # Calling the forward function
-        output = softmax.forward(inputs)
+        output_loss = softmax.forward(inputs_loggits, inputs_ytrue)
+        output_probabilities = softmax.output
         
-        # Asserting that the output is close to the expected output
-        # Using np.allclose to compare two arrays for testing purposes
-        assert np.allclose(output, expected_output), "The softmax output did not match the expected values."
+        # Asserting that the outputs are close
+        assert np.allclose(output_probabilities, expected_output), "The softmax output did not match the expected values."
+        assert np.allclose(output_loss, expected_loss), "The cross-entropy loss output did not match the expected loss."
