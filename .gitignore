@@ -161,7 +161,6 @@ cython_debug/
 
 # Nix
 .direnv/
-.envrc
 
 # Others
 .tmp/
