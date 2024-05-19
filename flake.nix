@@ -26,10 +26,12 @@
           setuptools
           wheel
           venvShellHook
-          numpy
           pandas
           pyarrow
           tkinter
+          pkgs.gfortran
+          pkgs.openblas
+          pkgs.lapack
         ];
         venvDir = ".venv";
         src = null;
