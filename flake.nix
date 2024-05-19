@@ -26,9 +26,6 @@
           setuptools
           wheel
           venvShellHook
-          ipython
-          jupyter
-          jupyterlab
           numpy
           pandas
           pyarrow
