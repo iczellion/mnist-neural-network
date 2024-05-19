@@ -28,12 +28,12 @@ class LinearLayer:
         self.dweights = None
         self.dbias = None
 
-    def forward(self, inputs):
+    def forward(self, inputs) -> np.array:
         self.inputs = inputs
         z1 = np.dot(self.weights, inputs) + self.bias
         return z1
 
-    def backward(self, dvalues):
+    def backward(self, dvalues) -> np.array:
         self.dweights = np.dot(dvalues, self.inputs.T)
         self.dbias = np.sum(dvalues, axis=1, keepdims=True)
         return np.dot(self.weights.T, dvalues)
@@ -43,11 +43,11 @@ class ActivationRelu:
     def __init__(self) -> None:
         self.inputs = {}
 
-    def forward(self, inputs):
+    def forward(self, inputs) -> np.array:
         self.inputs = inputs
         return np.maximum(inputs, 0)
     
-    def backward(self, dvalues):
+    def backward(self, dvalues) -> np.array:
         return dvalues * (self.inputs > 0)
 
 class ActivationSoftmaxLossCrossEntropy:
@@ -62,7 +62,7 @@ class ActivationSoftmaxLossCrossEntropy:
         self.output = None
         self.y_true = None
     
-    def forward(self, inputs, y_true):
+    def forward(self, inputs, y_true) -> float:
         self.inputs = inputs
         self.y_true = y_true
         
@@ -77,7 +77,7 @@ class ActivationSoftmaxLossCrossEntropy:
         
         return loss
 
-    def backward(self):
+    def backward(self) -> np.array:
         samples = self.y_true.shape[1]
         dinputs = self.output - self.y_true
         return dinputs / samples
@@ -87,7 +87,7 @@ class NNValueEncoder:
     def __init__(self) -> None:
         pass
 
-    def one_hot_encode(self, inputs):
+    def one_hot_encode(self, inputs) -> np.array:
         one_hot_output = np.zeros((inputs.size, inputs.max() + 1))
         one_hot_output[np.arange(inputs.size), inputs] = 1
         one_hot_output = one_hot_output.T
@@ -99,7 +99,7 @@ class NeuralNetwork:
         self.layers = layers
         self.loss_function = loss_function
 
-    def train(self, x_train, y_train, x_test, y_test, epochs, learning_rate):
+    def train(self, x_train: np.array, y_train: np.array, x_test: np.array, y_test: np.array, epochs: int, learning_rate: float) -> None:
 
         # Initialize one hot encoder for Y values
         enc = NNValueEncoder()
@@ -130,7 +130,7 @@ class NeuralNetwork:
                 accuracy = np.sum(pred == y_test) / y_test.size
                 print(f"epoch: {epoch:>6} | loss: {loss:<20.8} | accuracy: {accuracy*100:.2f}%")
     
-    def predict(self, x):
+    def predict(self, x: np.array) -> np.array:
         activation = x
         for layer in self.layers:
             activation = layer.forward(activation)
@@ -138,7 +138,7 @@ class NeuralNetwork:
         class_labels = np.argmax(activation, axis=0, keepdims=True)
         return class_labels
 
-def view_image(image_array):
+def view_image(image_array: np.array) -> None:
     current_image = image_array.reshape((28, 28)) * 255
 
     plt.gray()
