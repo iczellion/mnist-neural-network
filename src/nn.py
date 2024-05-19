@@ -22,8 +22,8 @@ class LinearLayer:
 
         self.n_inputs = n_inputs
         self.n_outputs = n_outputs
-        self.weights = np.random.rand( n_outputs, n_inputs ) - 0.5
-        self.bias = np.random.rand( n_outputs, 1 ) - 0.5
+        self.weights = np.random.randn(n_outputs, n_inputs) * np.sqrt(2. / n_inputs)  # He initialization
+        self.bias = np.zeros((n_outputs, 1))
         self.inputs = None
         self.dweights = None
         self.dbias = None
